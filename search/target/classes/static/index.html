@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Engine</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f5fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: url('background-pattern.png'); /* Optional background pattern */
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #0073e6;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        label {
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        select, input[type="text"] {
+            padding: 12px;
+            font-size: 1.1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 6px;
+            background-color: #0073e6;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #005bb5;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #results-container {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 1rem;
+        }
+
+        th {
+            background-color: #0073e6;
+            color: #fff;
+        }
+
+        #table-body tr:hover {
+            background-color: #e9f5ff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>Search Engine</h1>
+    <div class="form-group">
+        <label for="table-select">Select Table:</label>
+        <select id="table-select" onchange="handleTableChange()">
+            <option value="">--Select a Table--</option>
+            <option value="products">Product</option>
+            <option value="product-extensions">Product Extension</option>
+            <option value="customers">Customer</option>
+            <option value="customer-extensions">Customer Extension</option>
+        </select>
+    </div>
+
+    <div id="search-options" class="form-group hidden">
+        <label for="search-option-select">Choose Action:</label>
+        <select id="search-option-select" onchange="handleSearchOptionChange()">
+            <option value="">--Select an Option--</option>
+            <option value="display-all">Display All Data</option>
+            <option value="search-by-id">Search by ID</option>
+        </select>
+    </div>
+
+    <div id="search-by-id-container" class="form-group hidden">
+        <label for="search-input">Enter ID or SKU:</label>
+        <input type="text" id="search-input" placeholder="Enter ID or SKU">
+        <button onclick="searchData()">Search</button>
+    </div>
+
+    <div id="results-container">
+        <h2>Results:</h2>
+        <table id="results-table">
+            <thead>
+            <tr id="table-header">
+                <!-- Dynamic Table Headers -->
+            </tr>
+            </thead>
+            <tbody id="table-body">
+            <!-- Dynamic Table Rows -->
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    function handleTableChange() {
+        const searchOptions = document.getElementById('search-options');
+        searchOptions.classList.remove('hidden');
+        document.getElementById('search-by-id-container').classList.add('hidden');
+        document.getElementById('table-body').innerHTML = ''; // Clear previous results
+    }
+
+    function handleSearchOptionChange() {
+        const searchOption = document.getElementById('search-option-select').value;
+        const searchByIdContainer = document.getElementById('search-by-id-container');
+
+        if (searchOption === 'search-by-id') {
+            searchByIdContainer.classList.remove('hidden');
+        } else {
+            searchByIdContainer.classList.add('hidden');
+            if (searchOption === 'display-all') {
+                fetchData();
+            }
+        }
+    }
+
+    function searchData() {
+    const table = document.getElementById('table-select').value;
+    const id = document.getElementById('search-input').value;
+    const url = `http://localhost:8080/api/${table}/search?id=${id}`;
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data) {
+                displayResults([data]);
+            } else {
+                alert("No data found for the provided ID");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+
+    function fetchData() {
+        const table = document.getElementById('table-select').value;
+        const url = `http://localhost:8080/api/${table}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => displayResults(data))
+            .catch(error => console.error('Error:', error));
+    }
+
+    function displayResults(data) {
+        const tableHeader = document.getElementById('table-header');
+        const tableBody = document.getElementById('table-body');
+
+        // Clear previous results
+        tableHeader.innerHTML = '';
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="100%">No data found</td></tr>';
+            return;
+        }
+
+        // Create table headers dynamically
+        const headers = Object.keys(data[0]);
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header.replace(/_/g, ' ').toUpperCase();
+            tableHeader.appendChild(th);
+        });
+
+        // Populate table rows with data
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            headers.forEach(header => {
+                const td = document.createElement('td');
+                td.textContent = item[header];
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+</script>
+</body>
+</html>
